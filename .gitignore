@@ -4,6 +4,8 @@ cache/
 
 # 忽略 LLaMA-Factory 文件夹下的所有文件和子文件夹
 LLaMA-Factory/**
-
+# 但不忽略文件所在的父文件夹
+!LLaMA-Factory/examples/
+!LLaMA-Factory/examples/train_vl/
 # 但不忽略 LLaMA-Factory/examples/train_vl/ 路径下的特定文件
 !LLaMA-Factory/examples/train_vl/qwen2vl_bdd_multiframe_sft.yaml
