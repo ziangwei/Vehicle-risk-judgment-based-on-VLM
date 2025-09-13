@@ -1,0 +1,49 @@
+model_name_or_path: Qwen/Qwen2.5-VL-7B-Instruct
+cache_dir: ../cache
+
+stage: sft
+do_train: true
+finetuning_type: lora
+
+# QLoRA（显存友好）
+quantization_bit: 4
+quantization_method: bitsandbytes
+
+# 建议的 LoRA 目标
+lora_target: [q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj]
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+
+# 数据（注意：我们从 LLaMA-Factory 目录运行，所以 dataset_dir 用 ../data）
+dataset_dir: ../data
+dataset: bdd_multiframe_sft_train_conv
+eval_dataset: bdd_multiframe_sft_val_conv
+template: qwen2_vl         # Qwen-VL 用 Qwen-VL 模板
+cutoff_len: 16384
+remove_unused_columns: false
+
+output_dir: ../saves/qwen2_5_vl7b/bdd_multiframe_sft
+resume_from_checkpoint: true
+ignore_data_skip: false
+overwrite_output_dir: true
+logging_steps: 10
+save_steps: 200
+plot_loss: true
+
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 16
+learning_rate: 2.0e-4
+num_train_epochs: 2
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+bf16: true                # H100 开 bf16
+gradient_checkpointing: true
+dataloader_drop_last: true
+
+per_device_eval_batch_size: 1
+eval_strategy: steps
+eval_steps: 1000
+
+# 可选：关闭 wandb
+report_to: none
