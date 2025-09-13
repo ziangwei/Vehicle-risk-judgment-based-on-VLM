@@ -1,0 +1,16 @@
+{
+  "images": [
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg"
+  ],
+  "frame_idx_list": [109, 109, 109, 109, 109],
+  "conversations": [
+    {
+      "role": "user",
+      "content": "<image>\n<image>\n<image>\n<image>\n<image>\n仅依据按时间顺序给出的多帧行车画面，输出驾驶风险评估JSON。必须包含字段: risk_level, hazards[], reasoning[], metrics{}, recommendation, evidence[].不得编造未在画面中出现的信息。"
+    }
+  ]
+}
