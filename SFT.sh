@@ -2,8 +2,8 @@
 #SBATCH --job-name=BDD_SFT
 #SBATCH --partition=lrz-hgx-h100-94x4   # 或其他GPU分区
 #SBATCH --gres=gpu:1       # 请求2个GPUs
-#SBATCH --time=15:00:00    # 运行时间限制
-#SBATCH --mem=64G          # 内存需求
+#SBATCH --time=48:00:00    # 运行时间限制
+#SBATCH --mem=128G
 
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate llama-factory

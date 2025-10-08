@@ -22,6 +22,7 @@ eval_dataset: bdd_multiframe_sft_val_conv
 template: qwen2_vl         # Qwen-VL 用 Qwen-VL 模板
 cutoff_len: 16384
 remove_unused_columns: false
+preprocessing_num_workers: 1
 
 output_dir: ../saves/qwen2_5_vl7b/bdd_multiframe_sft
 resume_from_checkpoint: true

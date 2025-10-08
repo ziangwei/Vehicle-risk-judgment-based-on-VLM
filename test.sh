@@ -2,7 +2,7 @@
 #SBATCH --job-name=BDD_SFT_test
 #SBATCH --partition=lrz-hgx-h100-94x4   # 适配16
 #SBATCH --gres=gpu:1
-#SBATCH --time=25:00:00    # 运行时间限制
+#SBATCH --time=48:00:00    # 运行时间限制
 #SBATCH --mem=64G          # 内存需求
 
 export HF_HOME=$(pwd)/cache
@@ -11,8 +11,8 @@ export WANDB_DISABLED=true
 
 # ==== 1) 推理（H100优化版脚本） ====
 srun python infer_bdd_multiframe_h100.py \
-  --adapter saves/qwen2_5_vl7b/bdd_multiframe_sft/checkpoint-2000 \
-  --input data/processed/conv_eval_holdout.jsonl \
+  --adapter saves/qwen2_5_vl7b/bdd_multiframe_sft/checkpoint-1000 \
+  --input data/processed/bdd_multiframe_sft_val_conv.jsonl \
   --out   outputs/pred_holdout.jsonl \
   --json_only_out outputs/pred_holdout.onlyjson.jsonl \
   --greedy --strict_fields \

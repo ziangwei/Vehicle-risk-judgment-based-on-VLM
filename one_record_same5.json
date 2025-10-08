@@ -1,10 +1,10 @@
 {
   "images": [
-    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
-    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
-    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
-    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg",
-    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/raw/bdd100k/images/track/val/b1c66a42-6f7d68ca/b1c66a42-6f7d68ca-0000110.jpg"
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/processed/images_with_bbox_val/b1d0a191-65deaeef/b1d0a191-65deaeef-0000086_obj_00116432.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/processed/images_with_bbox_val/b1d0a191-65deaeef/b1d0a191-65deaeef-0000086_obj_00116432.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/processed/images_with_bbox_val/b1d0a191-65deaeef/b1d0a191-65deaeef-0000086_obj_00116432.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/processed/images_with_bbox_val/b1d0a191-65deaeef/b1d0a191-65deaeef-0000086_obj_00116432.jpg",
+    "/dss/dssfs05/pn39qo/pn39qo-dss-0001/di97fer/projects_for_test/llamafactory_sft/data/processed/images_with_bbox_val/b1d0a191-65deaeef/b1d0a191-65deaeef-0000086_obj_00116432.jpg"
   ],
   "frame_idx_list": [109, 109, 109, 109, 109],
   "conversations": [
