@@ -22,6 +22,6 @@ srun python infer_bdd_multiframe_h100.py \
 # ==== 2) 评测 ====
 srun python scripts/eval_from_conversations_h100.py \
   --pred_jsonl outputs/pred_holdout.jsonl \
-  --events     data/interim/events/events_val_holdout.jsonl \
+  --events     data/interim/events_val_holdout.jsonl \
   --manifest   data/interim/manifests/manifest_val.jsonl \
   --out_dir    reports/eval_holdout --confusion
