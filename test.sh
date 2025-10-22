@@ -20,8 +20,14 @@ srun python infer_bdd_multiframe_h100.py \
   --merge_adapter --device cuda --attn_impl sdpa --compile
 
 # ==== 2) 评测 ====
-srun python scripts/eval_from_conversations_h100.py \
-  --pred_jsonl outputs/pred_holdout.jsonl \
-  --events     data/interim/events_val_holdout.jsonl \
-  --manifest   data/interim/manifests/manifest_val.jsonl \
-  --out_dir    reports/eval_holdout --confusion
+#srun python scripts/eval_from_conversations_h100.py \
+#  --pred_jsonl outputs/pred_holdout.jsonl \
+#  --events     data/interim/events_val_holdout.jsonl \
+#  --manifest   data/interim/manifests/manifest_val.jsonl \
+#  --out_dir    reports/eval_holdout --confusion
+
+# ==== 2) 评测 (使用新的鲁棒脚本) ====
+srun python scripts/robust_eval.py \
+  --pred_jsonl    outputs/pred_holdout.jsonl \
+  --gt_jsonl      data/processed/bdd_multiframe_sft_val_conv.jsonl \
+  --out_dir       reports/robust_eval_holdout

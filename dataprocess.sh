@@ -9,12 +9,17 @@
 #SBATCH --time=08:00:00               # 任务最长运行时长，设置为8小时，应该足够了
 
 # 运行数据处理脚本
-# python scripts/mine_events.py
-# python scripts/events_to_sft.py
-# python scripts/datarepair.py
-python scripts/convert_to_conversations.py
-
+#python scripts/mine_events.py
 #echo "事件生成完成！"
+#
+#python scripts/events_to_sft.py
 #echo "SFT数据预处理完成！"
+#
+#python scripts/datarepair.py
 #echo "数据修复任务完成！"
-echo "对话格式转换任务完成！"
+#
+#python scripts/convert_to_conversations.py
+#echo "对话格式转换任务完成！"
+
+python scripts/convert_coords_to_int.py
+echo "坐标格式转换任务完成！"

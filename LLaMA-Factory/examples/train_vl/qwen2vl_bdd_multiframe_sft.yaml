@@ -25,7 +25,7 @@ remove_unused_columns: false
 preprocessing_num_workers: 1
 
 output_dir: ../saves/qwen2_5_vl7b/bdd_multiframe_sft
-resume_from_checkpoint: true
+resume_from_checkpoint: false
 ignore_data_skip: false
 overwrite_output_dir: true
 logging_steps: 10
@@ -35,7 +35,7 @@ plot_loss: true
 per_device_train_batch_size: 1
 gradient_accumulation_steps: 16
 learning_rate: 2.0e-4
-num_train_epochs: 2
+num_train_epochs: 1
 lr_scheduler_type: cosine
 warmup_ratio: 0.03
 bf16: true                # H100 开 bf16

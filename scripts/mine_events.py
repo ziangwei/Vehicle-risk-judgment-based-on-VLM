@@ -7,15 +7,18 @@ import random
 import sys
 
 # ---------------- Args ----------------
-parser = argparse.ArgumentParser()
-parser.add_argument("--window", type=int, default=5, help="frames per window")
-parser.add_argument("--stride", type=int, default=1, help="sliding step")
-parser.add_argument("--cutin_dx", type=float, default=0.12, help="abs lateral shift (normalized by width)")
-parser.add_argument("--brake_area", type=float, default=1.4, help="area growth ratio")
-parser.add_argument("--center_tol", type=float, default=0.25, help="|cx_norm-0.5| <= center_tol")
-parser.add_argument("--front_y", type=float, default=0.55, help="cy_norm >= front_y")
-# 新增：负采样率，例如 0.1 表示对 10% 的平稳窗口进行采样
-parser.add_argument("--stable_sample_rate", type=float, default=0.1, help="sampling rate for stable driving windows")
+parser = argparse.ArgumentParser(description="Mine risk events from BDD100K tracks.")
+parser.add_argument("--window", type=int, default=15, help="Frames per window for event detection.")
+parser.add_argument("--stride", type=int, default=2, help="Sliding step for the window.")
+parser.add_argument("--cutin_dx", type=float, default=0.12, help="Threshold for lateral shift (cut-in).")
+parser.add_argument("--brake_area", type=float, default=1.4, help="Threshold for area growth (hard-brake).")
+parser.add_argument("--center_tol", type=float, default=0.25, help="Tolerance for being in the center.")
+parser.add_argument("--front_y", type=float, default=0.55, help="Y-coordinate threshold for being in front.")
+parser.add_argument("--stable_sample_rate", type=float, default=0.05,
+                    help="Sampling rate for stable (easy negative) windows.")
+parser.add_argument("--hard_negative_rate", type=float, default=0.2, help="Sampling rate for hard negative windows.")
+parser.add_argument("--width", type=int, default=1280, help="Video width for normalization.")
+parser.add_argument("--height", type=int, default=720, help="Video height for normalization.")
 args = parser.parse_args()
 
 # ---------------- Paths ----------------
@@ -25,15 +28,15 @@ OUT_DIR = ROOT / "data/interim/events"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
+# --- Helper Functions (Corrected and Robust) ---
+
 def to_xywh_from_label(lab):
     b2d = lab.get("box2d")
-    if isinstance(b2d, dict) and {"x1", "y1", "x2", "y2"} <= b2d.keys():
+    if isinstance(b2d, dict) and all(k in b2d for k in ["x1", "y1", "x2", "y2"]):
         x1, y1, x2, y2 = float(b2d["x1"]), float(b2d["y1"]), float(b2d["x2"]), float(b2d["y2"])
         return x1, y1, max(1.0, x2 - x1), max(1.0, y2 - y1)
-    bb = lab.get("bbox") or lab.get("box") or None
-    if isinstance(bb, (list, tuple)) and len(bb) >= 4:
-        return float(bb[0]), float(bb[1]), float(bb[2]), float(bb[3])
     return None
+
 
 def cxcy_area(box):
     x, y, w, h = box
@@ -42,117 +45,109 @@ def cxcy_area(box):
 
 def load_tracks(label_path: Path):
     try:
-        data = json.load(open(label_path))
-    except (json.JSONDecodeError, FileNotFoundError):
+        with open(label_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        print(f"Warning: Skipping corrupted or missing label file {label_path}: {e}", file=sys.stderr)
         return {}, 0
 
-    if isinstance(data, list):
+    # ==========================================================
+    #  ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 核心修复：兼容两种JSON格式 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+    # ==========================================================
+    if isinstance(data, dict):
+        frames = data.get("frames", [])
+    elif isinstance(data, list):
         frames = data
-    elif isinstance(data, dict):
-        frames = data.get("frames") or data.get("video", {}).get("frames") or []
     else:
         frames = []
+    # ==========================================================
+    #  ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 核心修复：兼容两种JSON格式 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+    # ==========================================================
 
     tracks = {}
     for fi, fr in enumerate(frames):
-        labels = fr.get("labels") if isinstance(fr, dict) else None
-        if not labels: continue
-        for lab in labels:
-            obj_id = lab.get("id", lab.get("track_id", lab.get("index")))
-            if obj_id is None: continue
+        for lab in fr.get("labels", []):
+            obj_id = lab.get("id", lab.get("track_id"))
             box = to_xywh_from_label(lab)
-            if box is None: continue
-            tracks.setdefault(obj_id, {})[fi] = box
+            if obj_id is not None and box is not None:
+                tracks.setdefault(str(obj_id), {})[fi] = box
     return tracks, len(frames)
 
 
-def mine_seq(rec, out_f):
-    frames = rec["frames"]
-    label_path = Path(rec["label"])
-    try:
-        W, H = Image.open(frames[0]).size
-    except Exception:
-        W, H = 1280, 720
+# --- Core Mining Logic (Optimized) ---
 
+def mine_seq(rec, out_f):
+    W, H = args.width, args.height
+    label_path = Path(rec["label"])
     tracks, n_frames = load_tracks(label_path)
-    win = args.window
-    stride = args.stride
+
     for obj_id, timeline in tracks.items():
-        if len(timeline) < 2: continue
+        if len(timeline) < args.window:
+            continue
+
         i = 0
-        while i + win - 1 < n_frames:
-            t0 = i
-            t1 = i + win - 1
+        while i + args.window - 1 < n_frames:
+            t0, t1 = i, i + args.window - 1
             if t0 in timeline and t1 in timeline:
-                b0 = timeline[t0];
-                b1 = timeline[t1]
-                cx0, cy0, a0 = cxcy_area(b0);
+                b0, b1 = timeline[t0], timeline[t1]
+                cx0, _, a0 = cxcy_area(b0)
                 cx1, cy1, a1 = cxcy_area(b1)
+
                 dx_norm = (cx1 - cx0) / float(W)
-                area_ratio = a1 / a0
+                area_ratio = a1 / a0 if a0 > 0 else 1.0
                 cx_mid_norm = ((cx0 + cx1) / 2.0) / W
                 cy_last_norm = cy1 / H
+
                 front = cy_last_norm >= args.front_y
                 center_ok = abs(cx_mid_norm - 0.5) <= args.center_tol
 
                 is_cutin = abs(dx_norm) >= args.cutin_dx and front
-                is_brake = (area_ratio >= args.brake_area) and front and center_ok
+                is_brake = area_ratio >= args.brake_area and front and center_ok
 
                 event_to_write = None
 
                 if is_cutin or is_brake:
-                    # 这是一个风险事件，直接记录
                     event_to_write = "cut_in" if is_cutin else "hard_brake"
                 else:
-                    # 这是一个非风险窗口，我们判断它是否“平稳”
-                    is_stable = abs(dx_norm) < 0.05 and abs(area_ratio - 1.0) < 0.1
-                    # 如果平稳，我们就按一定概率进行采样，作为负样本
-                    if is_stable and random.random() < args.stable_sample_rate:
+                    is_hard_negative = (abs(dx_norm) >= args.cutin_dx * 0.7 and front) or \
+                                       (area_ratio >= args.brake_area * 0.8 and front and center_ok)
+                    if is_hard_negative and random.random() < args.hard_negative_rate:
                         event_to_write = "normal_driving"
+                    else:
+                        is_stable = abs(dx_norm) < 0.05 and abs(area_ratio - 1.0) < 0.1
+                        if is_stable and random.random() < args.stable_sample_rate:
+                            event_to_write = "normal_driving"
 
                 if event_to_write:
                     rec_out = {
-                        "split": rec["split"],
-                        "seq_id": rec["seq_id"],
-                        "center_idx": int((t0 + t1) // 2),
-                        "window": list(range(t0, t1 + 1)),
-                        "label": rec["label"],
-                        "event": event_to_write,
-                        "obj_id": obj_id,
+                        "split": rec["split"], "seq_id": rec["seq_id"],
+                        "center_idx": (t0 + t1) // 2, "window": list(range(t0, t1 + 1)),
+                        "label": rec["label"], "event": event_to_write, "obj_id": obj_id,
                         "metrics": {
-                            "dx_norm": round(float(dx_norm), 4),
-                            "abs_dx_norm": round(abs(float(dx_norm)), 4),
-                            "area_ratio": round(float(area_ratio), 4),
-                            "cx_mid_norm": round(float(cx_mid_norm), 4),
-                            "cy_last_norm": round(float(cy_last_norm), 4),
-                            "W": W, "H": H
+                            "dx_norm": round(dx_norm, 4), "area_ratio": round(area_ratio, 4),
+                            "cx_mid_norm": round(cx_mid_norm, 4), "cy_last_norm": round(cy_last_norm, 4)
                         }
                     }
                     out_f.write(json.dumps(rec_out, ensure_ascii=False) + "\n")
-
-            i += stride
+            i += args.stride
 
 
 def process_split(split):
     mani = MAN_DIR / f"manifest_{split}.jsonl"
     out_p = OUT_DIR / f"events_{split}.jsonl"
-    n_seq = 0
-    # 获取总行数用于tqdm
+
     try:
         total_lines = sum(1 for _ in open(mani, "r", encoding="utf-8"))
     except FileNotFoundError:
-        print(f"Error: Manifest file not found at {mani}", file=sys.stderr)
+        print(f"Error: Manifest file '{mani}' not found. Please run 'build_bdd_manifest.py' first.", file=sys.stderr)
         return
 
     with open(mani, "r", encoding="utf-8") as f_in, open(out_p, "w", encoding="utf-8") as f_out:
-        for line in tqdm(f_in, total=total_lines, desc=f"Mining events for {split}"):
-            rec = json.loads(line)
-            n_seq += 1
-            mine_seq(rec, f_out)
+        for line in tqdm(f_in, total=total_lines, desc=f"Mining events for '{split}'"):
+            mine_seq(json.loads(line), f_out)
 
     n_evt = sum(1 for _ in open(out_p, "r", encoding="utf-8"))
-    print(f"[{split}] sequences scanned: {n_seq} ; events found: {n_evt}")
-    print(f"[{split}] wrote -> {out_p}")
+    print(f"[{split}] Scanned {total_lines} sequences, found {n_evt} events -> {out_p}")
 
 
 def main():
